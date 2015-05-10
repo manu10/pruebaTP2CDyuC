@@ -1,24 +1,24 @@
 #include "PC_IO.h"
 #define TX_BUFFER_LENGTH 50
 #define RX_BUFFER_LENGTH 10 
-static unsigned  char TXindice_lectura=0;
-static unsigned  char TXindice_escritura=0;
-static unsigned  char RXindex_escritura=0;
-static unsigned  char RXindice_lectura=0;
-static unsigned  char TX_buffer [TX_BUFFER_LENGTH];
-static unsigned  char RX_buffer [RX_BUFFER_LENGTH];
+static unsigned  char TXIndice_lectura=0, TXIndice_escritura=0,RXIndex_escritura,RXIndex_lectura ;
+static unsigned  char TX_Buffer [ TX_BUFFER_LENGTH],RX_Buffer [ RX_BUFFER_LENGTH];
 
 /*funcion para inicializar*/
-void PC_IO_Init (void)
+void PC_IO_Init ()
 {
-	SCIBD = 52;
-	SCIC1  = 0;
-	SCIC2  = 0x0C;
+  SCIBD = 52;//Inicializa el baud rate en 9600
+  SCIC1  = 0;
+  SCIC2  = 0x0C;   //habilita Tx y Rx 
+  TXIndice_lectura=0;
+  TXIndice_escritura=0;
+  RXIndex_escritura=0;
+  RXIndex_lectura=0;
 }
 /*
  * FUNCION PRODUCTURA DE ESCRITURA DE STRING
  */
-void PC_IO_Write_String_To_Buffer(const char* STR_PTR )
+void PC_IO_Write_String_To_Buffer(  const char* STR_PTR )
 {
 	char i = 0;
 	while  ( STR_PTR [i] != '\0')
@@ -34,16 +34,16 @@ void PC_IO_Write_String_To_Buffer(const char* STR_PTR )
 void PC_IO_Write_Char_To_Buffer  ( const char Data )
 {
 	// Write to the buffer *only* if there is space
-	if (TXindice_escritura < TX_BUFFER_LENGTH)
-
+	if (TXIndice_escritura < TX_BUFFER_LENGTH)
+	
 	{
-		TX_buffer[TXindice_escritura] = Data;
-		TXindice_escritura ++;
+		TX_Buffer[TXIndice_escritura] = Data;
+		TXIndice_escritura ++;
 	}
 	else
 	{
 		// Write buffer is full
-		//		Error_code = ERROR_UART_FULL_BUFF;
+//		Error_code = ERROR_UART_FULL_BUFF;
 	}
 }
 /*
@@ -55,30 +55,31 @@ void PC_IO_Write_Char_To_Buffer  ( const char Data )
 void PC_IO_Update(void)
 {
 	char dato;
+	
 	/*
-	 * consumidora de la escritura
-	 */
-	if (TXindice_lectura < TXindice_escritura) // Hay byte en el buffer Tx para transmitir?
+		 * consumidora de la escritura
+		 */
+	if (TXIndice_lectura < TXIndice_escritura) // Hay byte en el buffer Tx para transmitir?
 	{//entonces lo mando a la salida(me comunico con el hardware
-		PC_IO_Send_Char (TX_buffer[TXindice_lectura]); 
-		TXindice_lectura++; 
+		PC_IO_Send_Char ( TX_Buffer [ TXIndice_lectura ] ); 
+		TXIndice_lectura++; 
 	}
 	else
 	{// No hay datos disponibles para enviar
-		TXindice_lectura = 0;
-		TXindice_escritura = 0; 
+		TXIndice_lectura = 0;
+		TXIndice_escritura = 0; 
 	}
-
+	
 	/*
 	 * productora de la lectura de datos
 	 */
 	// se ha recibido algún byte?
 	if ( PC_IO_Receive_data  ( &dato )  != 0) 
 	{  // Byte recibido. Escribir byte en buffer de entrada
-		if (RXindex_escritura < RX_BUFFER_LENGTH)
+		if (RXIndex_escritura < RX_BUFFER_LENGTH)
 		{
-			RX_buffer [ RXindex_escritura ] = dato; // Guardar dato en buffer
-			RXindex_escritura++; // Inc sin desbordar buffer
+			RX_Buffer [ RXIndex_escritura ] = dato; // Guardar dato en buffer
+			RXIndex_escritura++; // Inc sin desbordar buffer
 		}
 		else
 			;//Error_code = ERROR_UART_FULL_BUFF;
@@ -92,19 +93,18 @@ void PC_IO_Update(void)
 /*
  * FUNCION CONSUMIDORA DE LA LECTURA 
  */
-char PC_IO_Get_Char_From_Buffer (char* ch)
+char PC_IO_Get_Char_From_Buffer (char * ch)
 {
 	// Hay nuevo dato en el buffer?
-	if (RXindice_lectura <RXindex_escritura)
+	if (RXIndex_lectura <RXIndex_escritura)
 	{
-		*ch = RX_buffer [ RXindice_lectura ];
-		RXindice_lectura ++;
+		*ch = RX_Buffer [ RXIndex_lectura ];
+		RXIndex_lectura ++;
 		return 1; // Hay nuevo dato
 	}
 	else  {
-		
-		RXindice_lectura=0;
-		RXindex_escritura=0;
+		RXIndex_lectura=0;
+		RXIndex_escritura=0;
 		return 0; // No Hay
 	}
 }
@@ -112,7 +112,7 @@ char PC_IO_Get_Char_From_Buffer (char* ch)
 
 
 
-
+ 
 
 /*
  * FUNCIONES QUE INTERACTUAN CON EL HARDWARE DEL PERIFERICO:
@@ -124,7 +124,8 @@ void PC_IO_Send_Char (char dato)
 {
 	long Timeout1 = 0;
 	while  ( (++Timeout1) && (SCIS1_TDRE==0) );// ESPERA MIENTRAS
-	//EL "Transmit Data Register Empty Flag" ESTE LLENO
+	//EL "Transmit Data Register Empty Flag" ESTE en 0 es decir
+	//mientras el buffer esta vacio
 	if (Timeout1 == 0)
 	{
 		// UART  did not respond – error
@@ -135,7 +136,7 @@ void PC_IO_Send_Char (char dato)
 /*
  * RECIBE UN CARACTER POR EL PUERTO SERIE
  */
-char PC_IO_Receive_data  (char* dato)
+char PC_IO_Receive_data  (char *dato)
 {
 	if (SCIS1_RDRF==1) //SIE EL "Receive Data Register Full Flag" ESTA ACTIVO 
 		//QUIERE DECIR QUE HAY DATO POR LO TANTO COPIA EL DATO EN LA VARIABLE

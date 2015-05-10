@@ -1,3 +1,4 @@
+
 #ifndef _MANEJOLED_H
 #define _MANEJOLED_H 1
 
@@ -9,6 +10,5 @@
 void MANEJOLED_controlLed(int centesimoDeSeg);
 void MANEJOLED_apagarLed(void);
 void MANEJOLED_prenderLed(void);
-void MANEJOLED_init(void);
 
 #endif

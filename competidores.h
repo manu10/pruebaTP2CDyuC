@@ -3,11 +3,12 @@
 
 #include "MC9S08SH8.h"
 #include "reloj.h"
-
+#include "formato.h"
+#include "PC_IO.h"
 
 void competidores_registrar(void);
-tiempo competidores_getHora(char indice);
-tiempo competidores_getDiferencia(char indice);
+char* competidores_getHora(short int indice);
+tiempo competidores_getDiferencia(short int indice);
 char competidores_cant(void);
 void competidores_resetear(void);
 

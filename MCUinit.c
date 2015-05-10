@@ -9,7 +9,7 @@
 **     Processor : MC9S08SH8CPJ
 **     Version   : Component 01.008, Driver 01.08, CPU db: 3.00.066
 **     Datasheet : MC9S08SH8 Rev. 3 6/2008
-**     Date/Time : 2015-05-10, 03:48, # CodeGen: 40
+**     Date/Time : 2015-05-09, 22:48, # CodeGen: 2
 **     Abstract  :
 **         This module contains device initialization code 
 **         for selected on-chip peripherals.
@@ -27,6 +27,7 @@
 
 #include <mc9s08sh8.h>                 /* I/O map for MC9S08SH8CPJ */
 #include "MCUinit.h"
+#include "reloj.h"
 
 /* Standard ANSI C types */
 #ifndef int8_t
@@ -80,8 +81,8 @@ void MCU_init(void)
     ICSSC = *(unsigned char*far)0xFFAEU; /* Initialize ICSSC register from a non volatile memory */
   }
   /*lint -restore Enable MISRA rule (11.3) checking. */
-  /* ICSC1: CLKS=0,RDIV=0,IREFS=1,IRCLKEN=1,IREFSTEN=0 */
-  ICSC1 = 0x06U;                       /* Initialization of the ICS control register 1 */
+  /* ICSC1: CLKS=0,RDIV=0,IREFS=1,IRCLKEN=0,IREFSTEN=0 */
+  ICSC1 = 0x04U;                       /* Initialization of the ICS control register 1 */
   /* ICSC2: BDIV=1,RANGE=0,HGO=0,LP=0,EREFS=0,ERCLKEN=0,EREFSTEN=0 */
   ICSC2 = 0x40U;                       /* Initialization of the ICS control register 2 */
   while(ICSSC_IREFST == 0U) {          /* Wait until the source of reference clock is internal clock */
@@ -101,24 +102,11 @@ void MCU_init(void)
   PTBDS = 0x00U;                                      
   /* PTCDS: PTCDS3=0,PTCDS2=0,PTCDS1=0,PTCDS0=0 */
   PTCDS = 0x00U;                                      
-  /* ### Init_KBI init code */
-  /* PTASC: PTAIE=0 */
-  PTASC &= (unsigned char)~(unsigned char)0x02U;                     
-  /* PTAES: PTAES3=0,PTAES2=0,PTAES1=0,PTAES0=0 */
-  PTAES = 0x00U;                                      
-  /* PTASC: PTAMOD=0 */
-  PTASC &= (unsigned char)~(unsigned char)0x01U;                     
-  /* PTAPS: PTAPS3=0,PTAPS2=0,PTAPS1=0,PTAPS0=0 */
-  PTAPS = 0x00U;                                      
-  /* PTASC: PTAACK=1 */
-  PTASC |= (unsigned char)0x04U;                      
-  /* PTASC: PTAIE=1 */
-  PTASC |= (unsigned char)0x02U;                      
   /* ### Init_RTC init code */
   /* RTCMOD: RTCMOD=0 */
   RTCMOD = 0x00U;                      /* Set modulo register */
-  /* RTCSC: RTIF=1,RTCLKS=0,RTIE=1,RTCPS=0 */
-  RTCSC = 0x90U;                       /* Configure RTC */
+  /* RTCSC: RTIF=1,RTCLKS=0,RTIE=1,RTCPS=0x0B */
+  RTCSC = 0x9BU;                       /* Configure RTC */
   /* ### */
   /*lint -save  -e950 Disable MISRA rule (1.1) checking. */
   asm CLI;                             /* Enable interrupts */
@@ -140,32 +128,13 @@ void MCU_init(void)
 */
 __interrupt void isrVrtc(void)
 { 
-
+	
 	RTCSC_RTIF=1;
-	if(RELOJ_getState()==0)
-		RELOJ_actualizar();
+	RELOJ_actualizar();
 
 
 }
 /* end of isrVrtc */
-
-
-/*
-** ===================================================================
-**     Interrupt handler : isrVporta
-**
-**     Description :
-**         User interrupt service routine. 
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-__interrupt void isrVporta(void)
-{
-	/* Write your interrupt code here ... */
-
-}
-/* end of isrVporta */
 
 
 /*lint -restore Enable MISRA rule (8.10) checking. */
@@ -202,7 +171,7 @@ static void (* near const _vect[])(void) @0xFFC0 = { /* Interrupt vector table *
          UNASSIGNED_ISR,               /* Int.no. 23 Vadc (at FFD0)                  Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 22 VReserved22 (at FFD2)           Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 21 Vportb (at FFD4)                Unassigned */
-         isrVporta,                    /* Int.no. 20 Vporta (at FFD6)                Used */
+         UNASSIGNED_ISR,               /* Int.no. 20 Vporta (at FFD6)                Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 19 VReserved19 (at FFD8)           Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 18 Vscitx (at FFDA)                Unassigned */
          UNASSIGNED_ISR,               /* Int.no. 17 Vscirx (at FFDC)                Unassigned */
